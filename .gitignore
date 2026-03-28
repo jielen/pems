@@ -1,0 +1,29 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+pems_backend/target/
+pems_frontend/dist/
+pems_frontend/node_modules/
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+*.bak
+*.orig
+
+# Sensitive
+.env
+.env.local
+*.local
