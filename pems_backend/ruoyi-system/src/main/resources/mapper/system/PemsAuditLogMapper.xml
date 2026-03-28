@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.PemsAuditLogMapper">
+
+    <resultMap type="PemsAuditLog" id="PemsAuditLogResult">
+        <id     property="id"            column="id"            />
+        <result property="evidenceId"    column="evidence_id"    />
+        <result property="operationType" column="operation_type" />
+        <result property="operatorId"   column="operator_id"   />
+        <result property="operatorName" column="operator_name" />
+        <result property="operatorBadge" column="operator_badge" />
+        <result property="operatorUnit"  column="operator_unit"  />
+        <result property="operateTime"  column="operate_time"  />
+        <result property="operatorIp"   column="operator_ip"   />
+        <result property="detail"       column="detail"       />
+        <result property="prevHash"     column="prev_hash"     />
+        <result property="hashValue"    column="hash_value"    />
+        <result property="createTime"   column="create_time"   />
+    </resultMap>
+
+    <sql id="selectAuditLogVo">
+        select id, evidence_id, operation_type, operator_id, operator_name, operator_badge,
+               operator_unit, operate_time, operator_ip, detail, prev_hash, hash_value, create_time
+        from pems_audit_log
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="sqlwhereSearch">
+        <where>
+            <if test="evidenceId != null">
+                and evidence_id = #{evidenceId}
+            </if>
+            <if test="operationType != null and operationType != ''">
+                and operation_type = #{operationType}
+            </if>
+            <if test="operatorId != null">
+                and operator_id = #{operatorId}
+            </if>
+            <if test="operatorName != null and operatorName != ''">
+                and operator_name like concat('%', #{operatorName}, '%')
+            </if>
+            <if test="operatorBadge != null and operatorBadge != ''">
+                and operator_badge = #{operatorBadge}
+            </if>
+            <if test="operatorUnit != null and operatorUnit != ''">
+                and operator_unit like concat('%', #{operatorUnit}, '%')
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                and operate_time &gt;= #{params.beginTime}
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                and operate_time &lt;= #{params.endTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 插入审计日志 -->
+    <insert id="insert" parameterType="PemsAuditLog">
+        insert into pems_audit_log (
+            <if test="evidenceId != null">evidence_id,</if>
+            <if test="operationType != null and operationType != ''">operation_type,</if>
+            <if test="operatorId != null">operator_id,</if>
+            <if test="operatorName != null and operatorName != ''">operator_name,</if>
+            <if test="operatorBadge != null and operatorBadge != ''">operator_badge,</if>
+            <if test="operatorUnit != null and operatorUnit != ''">operator_unit,</if>
+            <if test="operateTime != null">operate_time,</if>
+            <if test="operatorIp != null and operatorIp != ''">operator_ip,</if>
+            <if test="detail != null and detail != ''">detail,</if>
+            prev_hash,
+            hash_value,
+            create_time
+        ) values (
+            <if test="evidenceId != null">#{evidenceId},</if>
+            <if test="operationType != null and operationType != ''">#{operationType},</if>
+            <if test="operatorId != null">#{operatorId},</if>
+            <if test="operatorName != null and operatorName != ''">#{operatorName},</if>
+            <if test="operatorBadge != null and operatorBadge != ''">#{operatorBadge},</if>
+            <if test="operatorUnit != null and operatorUnit != ''">#{operatorUnit},</if>
+            <if test="operateTime != null">#{operateTime},</if>
+            <if test="operatorIp != null and operatorIp != ''">#{operatorIp},</if>
+            <if test="detail != null and detail != ''">#{detail},</if>
+            #{prevHash},
+            #{hashValue},
+            sysdate()
+        )
+    </insert>
+
+    <!-- 查询最新的审计日志 -->
+    <select id="selectLatest" resultMap="PemsAuditLogResult">
+        <include refid="selectAuditLogVo"/>
+        order by id desc
+        limit 1
+    </select>
+
+    <!-- 查询审计日志列表 -->
+    <select id="selectList" parameterType="PemsAuditLog" resultMap="PemsAuditLogResult">
+        <include refid="selectAuditLogVo"/>
+        <include refid="sqlwhereSearch"/>
+        order by operate_time desc, id desc
+    </select>
+
+    <!-- 根据ID查询审计日志 -->
+    <select id="selectById" parameterType="Long" resultMap="PemsAuditLogResult">
+        <include refid="selectAuditLogVo"/>
+        where id = #{id}
+    </select>
+
+    <!-- 验证哈希链完整性 - 验证从指定ID开始的所有日志 -->
+    <select id="verifyHashChain" parameterType="Long" resultType="int">
+        select count(*) from (
+            select id, prev_hash, hash_value,
+                   @prev_hash := hash_value as expected_next_prev
+            from pems_audit_log,
+                 (select @prev_hash := 'GENESIS') as init
+            where id >= #{fromId}
+            order by id asc
+        ) as chain
+        where prev_hash != expected_next_prev
+    </select>
+
+</mapper>
