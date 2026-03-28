@@ -51,9 +51,16 @@ public class SysDept extends BaseEntity
 
     /** 父部门名称 */
     private String parentName;
-    
+
     /** 子部门 */
+    @com.baomidou.mybatisplus.annotation.TableField(exist = false)
     private List<SysDept> children = new ArrayList<SysDept>();
+
+    /** 单位编码（用于数据隔离，如000/000001/000001001） */
+    private String unitCode;
+
+    /** 单位层级：1=市级 2=区县 3=派出所 */
+    private Integer deptLevel;
 
     public Long getDeptId()
     {
@@ -181,6 +188,26 @@ public class SysDept extends BaseEntity
         this.children = children;
     }
 
+    public String getUnitCode()
+    {
+        return unitCode;
+    }
+
+    public void setUnitCode(String unitCode)
+    {
+        this.unitCode = unitCode;
+    }
+
+    public Integer getDeptLevel()
+    {
+        return deptLevel;
+    }
+
+    public void setDeptLevel(Integer deptLevel)
+    {
+        this.deptLevel = deptLevel;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -198,6 +225,8 @@ public class SysDept extends BaseEntity
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())
             .append("updateTime", getUpdateTime())
+            .append("unitCode", getUnitCode())
+            .append("deptLevel", getDeptLevel())
             .toString();
     }
 }
