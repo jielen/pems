@@ -9,8 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.common.annotation.DataScope;
+import com.ruoyi.common.constant.CacheConstants;
 import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.core.domain.entity.SysRole;
+import com.ruoyi.common.core.domain.model.LoginUser;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
@@ -23,6 +26,7 @@ import com.ruoyi.system.mapper.SysRoleMapper;
 import com.ruoyi.system.mapper.SysRoleMenuMapper;
 import com.ruoyi.system.mapper.SysUserRoleMapper;
 import com.ruoyi.system.service.ISysRoleService;
+import com.ruoyi.system.service.ISysUserService;
 
 /**
  * 角色 业务层处理
@@ -43,6 +47,18 @@ public class SysRoleServiceImpl implements ISysRoleService
 
     @Autowired
     private SysRoleDeptMapper roleDeptMapper;
+
+    @Autowired
+    private RedisCache redisCache;
+
+    @Autowired
+    private ISysUserService userService;
+
+    @Autowired
+    private com.ruoyi.framework.web.service.SysPermissionService permissionService;
+
+    @Autowired
+    private com.ruoyi.framework.web.service.TokenService tokenService;
 
     /**
      * 根据条件分页查询角色数据
@@ -404,7 +420,7 @@ public class SysRoleServiceImpl implements ISysRoleService
 
     /**
      * 批量选择授权用户角色
-     * 
+     *
      * @param roleId 角色ID
      * @param userIds 需要授权的用户数据ID
      * @return 结果
@@ -422,5 +438,65 @@ public class SysRoleServiceImpl implements ISysRoleService
             list.add(ur);
         }
         return userRoleMapper.batchUserRole(list);
+    }
+
+    /**
+     * 清除角色关联用户的权限缓存
+     * 使角色权限修改立即生效，无需用户重新登录
+     *
+     * @param roleId 角色ID
+     */
+    @Override
+    public void clearUserPermsCacheForRole(Long roleId)
+    {
+        // 获取拥有该角色的所有用户ID
+        List<Long> userIds = userRoleMapper.selectUserIdsByRoleId(roleId);
+        if (userIds == null || userIds.isEmpty())
+        {
+            return;
+        }
+
+        // 遍历Redis中所有缓存的LoginUser，刷新拥有该角色的用户的权限
+        // 注意：这是一个简化实现，在生产环境中可以考虑使用用户ID->token的反向索引
+        Set<String> keys = redisCache.keys(CacheConstants.LOGIN_TOKEN_KEY + "*");
+        if (keys == null || keys.isEmpty())
+        {
+            return;
+        }
+
+        for (String key : keys)
+        {
+            try
+            {
+                LoginUser loginUser = redisCache.getCacheObject(key);
+                if (loginUser == null || loginUser.getUser() == null)
+                {
+                    continue;
+                }
+
+                // 检查该用户是否拥有被修改的角色
+                Long userId = loginUser.getUser().getUserId();
+                if (userIds.contains(userId))
+                {
+                    // 重新加载用户信息和权限
+                    com.ruoyi.common.core.domain.entity.SysUser user = userService.selectUserById(userId);
+                    if (user != null)
+                    {
+                        // 重新加载用户的菜单权限
+                        Set<String> freshPerms = permissionService.getMenuPermission(user);
+                        loginUser.setPermissions(freshPerms);
+                        loginUser.setUser(user);
+
+                        // 更新缓存中的LoginUser
+                        redisCache.setCacheObject(key, loginUser);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                // 单个用户的缓存刷新失败不影响其他用户
+                com.ruoyi.common.utils.StringUtils.println("刷新用户权限缓存失败: {}", e.getMessage());
+            }
+        }
     }
 }

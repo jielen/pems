@@ -164,10 +164,18 @@ public interface ISysRoleService
 
     /**
      * 批量选择授权用户角色
-     * 
+     *
      * @param roleId 角色ID
      * @param userIds 需要删除的用户数据ID
      * @return 结果
      */
     public int insertAuthUsers(Long roleId, Long[] userIds);
+
+    /**
+     * 清除角色关联用户的权限缓存
+     * 当角色权限被修改时调用，使变更立即生效
+     *
+     * @param roleId 角色ID
+     */
+    public void clearUserPermsCacheForRole(Long roleId);
 }

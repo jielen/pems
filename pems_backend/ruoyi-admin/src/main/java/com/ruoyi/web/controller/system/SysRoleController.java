@@ -128,7 +128,9 @@ public class SysRoleController extends BaseController
         
         if (roleService.updateRole(role) > 0)
         {
-            // 更新缓存用户权限
+            // 清除所有拥有该角色的用户的权限缓存，使变更立即生效
+            roleService.clearUserPermsCacheForRole(role.getRoleId());
+            // 更新当前用户权限
             LoginUser loginUser = getLoginUser();
             if (StringUtils.isNotNull(loginUser.getUser()) && !loginUser.getUser().isAdmin())
             {
@@ -151,7 +153,13 @@ public class SysRoleController extends BaseController
     {
         roleService.checkRoleAllowed(role);
         roleService.checkRoleDataScope(role.getRoleId());
-        return toAjax(roleService.authDataScope(role));
+        if (roleService.authDataScope(role) > 0)
+        {
+            // 清除该角色所有用户的权限缓存
+            roleService.clearUserPermsCacheForRole(role.getRoleId());
+            return success();
+        }
+        return error("修改数据权限失败，请联系管理员");
     }
 
     /**

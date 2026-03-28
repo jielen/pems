@@ -53,10 +53,18 @@ public interface SysUserRoleMapper
 
     /**
      * 批量取消授权用户角色
-     * 
+     *
      * @param roleId 角色ID
      * @param userIds 需要删除的用户数据ID
      * @return 结果
      */
     public int deleteUserRoleInfos(@Param("roleId") Long roleId, @Param("userIds") Long[] userIds);
+
+    /**
+     * 查询拥有指定角色ID的所有用户ID
+     *
+     * @param roleId 角色ID
+     * @return 用户ID列表
+     */
+    public List<Long> selectUserIdsByRoleId(@Param("roleId") Long roleId);
 }
