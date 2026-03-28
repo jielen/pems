@@ -55,8 +55,21 @@
          :default-expand-all="isExpandAll"
          :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
       >
-         <el-table-column prop="deptName" label="部门名称" width="260"></el-table-column>
-         <el-table-column prop="orderNum" label="排序" width="200"></el-table-column>
+         <el-table-column prop="deptName" label="部门名称" width="180"></el-table-column>
+         <el-table-column prop="unitCode" label="单位编码" width="120">
+            <template #default="scope">
+               <span>{{ scope.row.unitCode || '-' }}</span>
+            </template>
+         </el-table-column>
+         <el-table-column prop="deptLevel" label="层级" width="100">
+            <template #default="scope">
+               <span v-if="scope.row.deptLevel === 1">市级</span>
+               <span v-else-if="scope.row.deptLevel === 2">区县</span>
+               <span v-else-if="scope.row.deptLevel === 3">派出所</span>
+               <span v-else>-</span>
+            </template>
+         </el-table-column>
+         <el-table-column prop="orderNum" label="排序" width="100"></el-table-column>
          <el-table-column prop="status" label="状态" width="100">
             <template #default="scope">
                <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
@@ -95,6 +108,11 @@
                <el-col :span="12">
                   <el-form-item label="部门名称" prop="deptName">
                      <el-input v-model="form.deptName" placeholder="请输入部门名称" />
+                  </el-form-item>
+               </el-col>
+               <el-col :span="12">
+                  <el-form-item label="单位编码">
+                     <el-input v-model="form.unitCode" placeholder="自动生成" disabled />
                   </el-form-item>
                </el-col>
                <el-col :span="12">

@@ -28,4 +28,8 @@ export interface SysDept extends BaseEntity {
   email?: string;
   /** 状态（0正常 1停用） */
   status?: '0' | '1';
+  /** 单位编码（用于数据隔离，如000/000001/000001001） */
+  unitCode?: string;
+  /** 单位层级：1=市级 2=区县 3=派出所 */
+  deptLevel?: number;
 }
