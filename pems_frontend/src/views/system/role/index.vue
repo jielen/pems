@@ -108,6 +108,11 @@
                ></el-switch>
             </template>
          </el-table-column>
+         <el-table-column label="数据范围" align="center" width="120">
+            <template #default="scope">
+               <span>{{ getDataScopeLabel(scope.row.dataScope) }}</span>
+            </template>
+         </el-table-column>
          <el-table-column label="创建时间" align="center" prop="createTime">
             <template #default="scope">
                <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -115,18 +120,23 @@
          </el-table-column>
          <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
             <template #default="scope">
-              <el-tooltip content="修改" placement="top" v-if="scope.row.roleId !== 1">
-                <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:role:edit']"></el-button>
+              <el-tooltip content="系统角色" placement="top" v-if="isSystemRole(scope.row.roleKey)">
+                <el-tag type="warning" effect="plain" size="small">系统</el-tag>
               </el-tooltip>
-              <el-tooltip content="删除" placement="top" v-if="scope.row.roleId !== 1">
-                <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:role:remove']"></el-button>
-              </el-tooltip>
-              <el-tooltip content="数据权限" placement="top" v-if="scope.row.roleId !== 1">
-                <el-button link type="primary" icon="CircleCheck" @click="handleDataScope(scope.row)" v-hasPermi="['system:role:edit']"></el-button>
-              </el-tooltip>
-              <el-tooltip content="分配用户" placement="top" v-if="scope.row.roleId !== 1">
-                <el-button link type="primary" icon="User" @click="handleAuthUser(scope.row)" v-hasPermi="['system:role:edit']"></el-button>
-              </el-tooltip>
+              <template v-else>
+                <el-tooltip content="修改" placement="top">
+                  <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:role:edit']"></el-button>
+                </el-tooltip>
+                <el-tooltip content="删除" placement="top">
+                  <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:role:remove']"></el-button>
+                </el-tooltip>
+                <el-tooltip content="数据权限" placement="top">
+                  <el-button link type="primary" icon="CircleCheck" @click="handleDataScope(scope.row)" v-hasPermi="['system:role:edit']"></el-button>
+                </el-tooltip>
+                <el-tooltip content="分配用户" placement="top">
+                  <el-button link type="primary" icon="User" @click="handleAuthUser(scope.row)" v-hasPermi="['system:role:edit']"></el-button>
+                </el-tooltip>
+              </template>
             </template>
          </el-table-column>
       </el-table>
@@ -377,6 +387,26 @@ function handleCommand(command: string, row: SysRole) {
 /** 分配用户 */
 function handleAuthUser(row: SysRole) {
   router.push("/system/role-auth/user/" + row.roleId)
+}
+
+/** 判断是否为系统预置角色 */
+function isSystemRole(roleKey: string | undefined): boolean {
+  if (!roleKey) return false
+  const systemRoles = ['super_admin', 'evidence_admin', 'investigator', 'auditor', 'reviewer']
+  return systemRoles.includes(roleKey)
+}
+
+/** 获取数据范围标签 */
+function getDataScopeLabel(dataScope: string | undefined): string {
+  if (!dataScope) return '-'
+  const scopeMap: Record<string, string> = {
+    '1': '全部数据',
+    '2': '自定数据',
+    '3': '本部门',
+    '4': '本部门及以下',
+    '5': '仅本人'
+  }
+  return scopeMap[dataScope] || '-'
 }
 
 /** 查询菜单树结构 */
