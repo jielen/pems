@@ -24,12 +24,12 @@ progress:
 ## Current Position
 
 Phase: 01 (foundation-data-isolation) — EXECUTING
-Plan: 3 of 4 (01-04 just completed)
+Plan: 01.1-01 of 01.1 (gap-schema-fix) — COMPLETED
 
 - **Milestone:** v1
 - **Phase:** 2
-- **Plan:** Not started
-- **Status:** Ready to plan
+- **Plan:** Completed
+- **Status:** Ready for next plan
 - **Progress:** [███████░░░] 75%
 
 ## Performance Metrics
@@ -56,6 +56,8 @@ Plan: 3 of 4 (01-04 just completed)
 | Predefined PEMS roles | super_admin, evidence_admin, investigator, auditor, reviewer | Approved |
 | Immediate permission cache refresh | Role permission changes evict Redis cache immediately | Approved |
 | Data scope per role | super_admin=1, evidence_admin/reviewer/auditor=4, investigator=5 | Approved |
+| Mandatory field convention | All tables follow del_flag, create_by, create_time, update_by, update_time, remark | Approved |
+| pems_audit_log immutable | No del_flag/update_by, but has create_by for traceability | Approved |
 
 ### Research Flags
 

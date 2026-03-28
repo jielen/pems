@@ -41,6 +41,7 @@
 - [x] 01-02-PLAN.md — Organization & Data Scope (unit_code, DataScopeAspect)
 - [ ] 01-03-PLAN.md — Role & Permission System (pems:* permissions)
 - [x] 01-04-PLAN.md — Audit & Config Management (hash chain, config UI)
+- [x] 01.1-01-PLAN.md — Gap Closure: Schema mandatory fields (del_flag, create_by, etc.)
 
 **UI hint**: yes
 
