@@ -21,12 +21,15 @@
 DROP TABLE IF EXISTS pems_config;
 CREATE TABLE pems_config (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '配置ID',
+    del_flag        CHAR(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+    create_by       VARCHAR(64) DEFAULT '' COMMENT '创建者',
+    create_time     DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_by       VARCHAR(64) DEFAULT '' COMMENT '更新者',
+    update_time     DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     param_key       VARCHAR(100) NOT NULL COMMENT '配置键（唯一）',
     param_value     VARCHAR(500) COMMENT '配置值',
     param_type      VARCHAR(50) COMMENT '配置类型：string/number/boolean/json',
     remark          VARCHAR(255) COMMENT '备注说明',
-    create_time     DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time     DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     UNIQUE KEY uk_param_key (param_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物证系统配置表';
 
@@ -55,6 +58,7 @@ INSERT INTO pems_config (param_key, param_value, param_type, remark) VALUES
 DROP TABLE IF EXISTS pems_audit_log;
 CREATE TABLE pems_audit_log (
     id                  BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '日志ID',
+    create_by           VARCHAR(64) DEFAULT '' COMMENT '创建者',
     evidence_id         BIGINT COMMENT '关联物证ID（系统操作时为空）',
     operation_type      VARCHAR(50) NOT NULL COMMENT '操作类型：CREATE/UPDATE/DELETE/TRANSFER/BORROW/RETURN/DESTROY等',
     operator_id        BIGINT NOT NULL COMMENT '操作人ID',
@@ -94,13 +98,17 @@ CREATE TABLE pems_audit_log (
 DROP TABLE IF EXISTS sys_dept_extend;
 CREATE TABLE sys_dept_extend (
     dept_id             BIGINT PRIMARY KEY COMMENT '部门ID（关联sys_dept）',
+    del_flag            CHAR(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+    create_by           VARCHAR(64) DEFAULT '' COMMENT '创建者',
+    create_time         DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_by           VARCHAR(64) DEFAULT '' COMMENT '更新者',
+    update_time         DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     unit_code           VARCHAR(50) COMMENT '单位编码（唯一，如000/000001/000001001）',
     dept_level          INT COMMENT '单位层级：1=市级 2=区县 3=派出所',
     parent_unit_code    VARCHAR(50) COMMENT '上级单位编码',
     sequence_num        INT DEFAULT 0 COMMENT '同级单位内的序号（3位数字）',
     ancestors_path      VARCHAR(500) COMMENT '祖先单位编码路径（用于DataScope查询）',
-    create_time         DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time         DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    remark              VARCHAR(500) COMMENT '备注',
     UNIQUE KEY uk_unit_code (unit_code),
     KEY idx_parent_unit_code (parent_unit_code),
     CONSTRAINT fk_dept_extend_dept FOREIGN KEY (dept_id) REFERENCES sys_dept(dept_id) ON DELETE CASCADE
