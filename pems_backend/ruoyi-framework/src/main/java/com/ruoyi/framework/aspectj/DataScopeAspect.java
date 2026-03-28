@@ -5,10 +5,12 @@ import java.util.List;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.core.domain.BaseEntity;
+import com.ruoyi.common.core.domain.entity.SysDept;
 import com.ruoyi.common.core.domain.entity.SysRole;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.domain.model.LoginUser;
@@ -16,6 +18,7 @@ import com.ruoyi.common.core.text.Convert;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.security.context.PermissionContextHolder;
+import com.ruoyi.system.mapper.SysDeptMapper;
 
 /**
  * 数据过滤处理
@@ -26,6 +29,9 @@ import com.ruoyi.framework.security.context.PermissionContextHolder;
 @Component
 public class DataScopeAspect
 {
+    @Autowired
+    private SysDeptMapper deptMapper;
+
     /**
      * 全部数据权限
      */
@@ -52,6 +58,12 @@ public class DataScopeAspect
     public static final String DATA_SCOPE_SELF = "5";
 
     /**
+     * 单位层级数据权限（多级数据隔离）
+     * 市级可见所有下级单位，区县级只能看本单位
+     */
+    public static final String DATA_SCOPE_UNIT_HIERARCHY = "6";
+
+    /**
      * 数据权限过滤关键字
      */
     public static final String DATA_SCOPE = "dataScope";
@@ -74,8 +86,82 @@ public class DataScopeAspect
             if (StringUtils.isNotNull(currentUser) && !currentUser.isAdmin())
             {
                 String permission = StringUtils.defaultIfEmpty(controllerDataScope.permission(), PermissionContextHolder.getContext());
+                // 先执行角色数据权限过滤
                 dataScopeFilter(joinPoint, currentUser, controllerDataScope.deptAlias(), controllerDataScope.userAlias(), permission);
+
+                // 检查是否有角色使用单位层级数据权限
+                String unitHierarchySql = getUnitCodeHierarchySql(currentUser, controllerDataScope.deptAlias());
+                if (StringUtils.isNotBlank(unitHierarchySql))
+                {
+                    // 将单位层级过滤条件添加到现有条件中
+                    Object params = joinPoint.getArgs()[0];
+                    if (StringUtils.isNotNull(params) && params instanceof BaseEntity)
+                    {
+                        BaseEntity baseEntity = (BaseEntity) params;
+                        String existingScope = (String) baseEntity.getParams().get(DATA_SCOPE);
+                        if (StringUtils.isNotBlank(existingScope))
+                        {
+                            // 合并条件：原有条件 AND 单位层级条件
+                            baseEntity.getParams().put(DATA_SCOPE, existingScope + " AND (" + unitHierarchySql + ")");
+                        }
+                        else
+                        {
+                            baseEntity.getParams().put(DATA_SCOPE, " AND (" + unitHierarchySql + ")");
+                        }
+                    }
+                }
             }
+        }
+    }
+
+    /**
+     * 获取单位层级过滤SQL
+     * 根据用户的部门层级决定过滤方式：
+     * - 市级(level=1)：可见所有下级单位(LIKE前缀匹配)
+     * - 区县(level=2)/派出所(level=3)：只能看本单位(精确匹配)
+     *
+     * @param user 当前用户
+     * @param deptAlias 部门表别名
+     * @return 单位层级过滤SQL条件
+     */
+    private String getUnitCodeHierarchySql(SysUser user, String deptAlias)
+    {
+        // 检查用户是否有角色使用单位层级数据权限
+        boolean hasUnitHierarchyRole = user.getRoles().stream()
+            .anyMatch(role -> DATA_SCOPE_UNIT_HIERARCHY.equals(role.getDataScope())
+                           && StringUtils.equals(role.getStatus(), UserConstants.ROLE_NORMAL));
+
+        if (!hasUnitHierarchyRole)
+        {
+            return null;
+        }
+
+        // 获取用户的部门信息
+        SysDept dept = deptMapper.selectDeptById(user.getDeptId());
+        if (dept == null || StringUtils.isBlank(dept.getUnitCode()))
+        {
+            // 没有部门或没有单位编码，不做额外过滤
+            return null;
+        }
+
+        String unitCode = dept.getUnitCode();
+        Integer deptLevel = dept.getDeptLevel();
+
+        if (deptLevel == null)
+        {
+            return null;
+        }
+
+        // 根据层级生成过滤条件
+        if (deptLevel == 1)
+        {
+            // 市级：可见所有以本单位编码开头的单位（所有下级区县和派出所）
+            return StringUtils.format("{}.unit_code LIKE CONCAT({}, '%')", deptAlias, unitCode);
+        }
+        else
+        {
+            // 区县和派出所：只能看本单位
+            return StringUtils.format("{}.unit_code = {}", deptAlias, unitCode);
         }
     }
 
@@ -148,6 +234,11 @@ public class DataScopeAspect
                     // 数据权限为仅本人且没有userAlias别名不查询任何数据
                     sqlString.append(StringUtils.format(" OR {}.dept_id = 0 ", deptAlias));
                 }
+            }
+            else if (DATA_SCOPE_UNIT_HIERARCHY.equals(dataScope))
+            {
+                // 单位层级数据权限由handleDataScope方法统一处理
+                // 此处不做处理，仅标记条件已处理
             }
             conditions.add(dataScope);
         }
