@@ -40,7 +40,7 @@
 - [x] 01-01-PLAN.md — Database schema (pems_config, pems_audit_log, sys_dept_extend)
 - [x] 01-02-PLAN.md — Organization & Data Scope (unit_code, DataScopeAspect)
 - [ ] 01-03-PLAN.md — Role & Permission System (pems:* permissions)
-- [ ] 01-04-PLAN.md — Audit & Config Management (hash chain, config UI)
+- [x] 01-04-PLAN.md — Audit & Config Management (hash chain, config UI)
 
 **UI hint**: yes
 
@@ -123,7 +123,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Data Isolation | 2/4 | In Progress | - |
+| 1. Foundation & Data Isolation | 3/4 | In Progress | - |
 | 2. Evidence Core Operations | 0/1 | Not started | - |
 | 3. Workflow Engine | 0/1 | Not started | - |
 | 4. Integration & Dashboard | 0/1 | Not started | - |
