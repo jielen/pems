@@ -142,4 +142,13 @@ Brownfield — 基于若依前后端分离框架（RuoYi v3.9.1 Vue3版本）进
 
 ---
 
-*Last updated: 2026-03-28 after initialization*
+*Last updated: 2026-03-28 after Phase 01 completion*
+
+## Current State
+
+**Phase 01: Foundation & Data Isolation — COMPLETE**
+- Database schema: pems_config, pems_audit_log (HMAC-SHA256 hash chain), sys_dept_extend
+- Unit hierarchy: multi-level data isolation via unit_code hierarchy (city → district)
+- Role/Permission system: 5 predefined roles (super_admin, evidence_admin, investigator, auditor, reviewer) with pems:* permission prefix
+- Audit logging: immutable audit logs with HMAC-SHA256 hash chain integrity verification
+- Config management: system configuration UI with CONFIG-01~07 coverage
