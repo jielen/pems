@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.core.domain.TreeSelect;
@@ -16,6 +17,8 @@ import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.spring.SpringUtils;
+import com.ruoyi.system.domain.SysDeptExtend;
+import com.ruoyi.system.mapper.SysDeptExtendMapper;
 import com.ruoyi.system.mapper.SysDeptMapper;
 import com.ruoyi.system.mapper.SysRoleMapper;
 import com.ruoyi.system.service.ISysDeptService;
@@ -33,6 +36,9 @@ public class SysDeptServiceImpl implements ISysDeptService
 
     @Autowired
     private SysRoleMapper roleMapper;
+
+    @Autowired
+    private SysDeptExtendMapper deptExtendMapper;
 
     /**
      * 查询部门管理数据
@@ -203,11 +209,12 @@ public class SysDeptServiceImpl implements ISysDeptService
 
     /**
      * 新增保存部门信息
-     * 
+     *
      * @param dept 部门信息
      * @return 结果
      */
     @Override
+    @Transactional
     public int insertDept(SysDept dept)
     {
         SysDept info = deptMapper.selectDeptById(dept.getParentId());
@@ -217,16 +224,54 @@ public class SysDeptServiceImpl implements ISysDeptService
             throw new ServiceException("部门停用，不允许新增");
         }
         dept.setAncestors(info.getAncestors() + "," + dept.getParentId());
-        return deptMapper.insertDept(dept);
+        int result = deptMapper.insertDept(dept);
+
+        // 创建部门扩展记录并生成unit_code
+        if (result > 0)
+        {
+            SysDeptExtend deptExtend = new SysDeptExtend();
+            deptExtend.setDeptId(dept.getDeptId());
+
+            // 计算deptLevel: 父节点为0(顶级)时为1,否则为父节点level+1
+            Integer parentLevel = 0;
+            SysDeptExtend parentExtend = deptExtendMapper.selectDeptExtendByDeptId(dept.getParentId());
+            if (parentExtend != null)
+            {
+                parentLevel = parentExtend.getDeptLevel();
+                deptExtend.setParentUnitCode(parentExtend.getUnitCode());
+            }
+            deptExtend.setDeptLevel(parentLevel + 1);
+
+            // 生成unit_code
+            String unitCode = generateUnitCode(dept.getParentId());
+            deptExtend.setUnitCode(unitCode);
+
+            // 计算序号
+            Integer maxSeq = deptExtendMapper.selectMaxSequenceNumByParentId(dept.getParentId());
+            deptExtend.setSequenceNum(maxSeq == null ? 1 : maxSeq + 1);
+
+            // 设置ancestorsPath
+            String ancestorsPath = "";
+            if (parentExtend != null)
+            {
+                ancestorsPath = parentExtend.getAncestorsPath();
+            }
+            deptExtend.setAncestorsPath(ancestorsPath + "/" + unitCode);
+
+            deptExtendMapper.insertDeptExtend(deptExtend);
+        }
+
+        return result;
     }
 
     /**
      * 修改保存部门信息
-     * 
+     *
      * @param dept 部门信息
      * @return 结果
      */
     @Override
+    @Transactional
     public int updateDept(SysDept dept)
     {
         SysDept newParentDept = deptMapper.selectDeptById(dept.getParentId());
@@ -239,6 +284,45 @@ public class SysDeptServiceImpl implements ISysDeptService
             updateDeptChildren(dept.getDeptId(), newAncestors, oldAncestors);
         }
         int result = deptMapper.updateDept(dept);
+
+        // 如果父部门变更，需要重新计算unit_code链
+        if (result > 0 && StringUtils.isNotNull(newParentDept) && StringUtils.isNotNull(oldDept)
+                && !oldDept.getParentId().equals(dept.getParentId()))
+        {
+            // 更新当前部门的extend信息
+            SysDeptExtend deptExtend = deptExtendMapper.selectDeptExtendByDeptId(dept.getDeptId());
+            if (deptExtend != null)
+            {
+                SysDeptExtend parentExtend = deptExtendMapper.selectDeptExtendByDeptId(dept.getParentId());
+                Integer parentLevel = parentExtend != null ? parentExtend.getDeptLevel() : 0;
+                String parentUnitCode = parentExtend != null ? parentExtend.getUnitCode() : "";
+
+                deptExtend.setDeptLevel(parentLevel + 1);
+                deptExtend.setParentUnitCode(parentUnitCode);
+
+                // 重新生成unit_code
+                String newUnitCode = generateUnitCode(dept.getParentId());
+                deptExtend.setUnitCode(newUnitCode);
+
+                // 更新序号
+                Integer maxSeq = deptExtendMapper.selectMaxSequenceNumByParentId(dept.getParentId());
+                deptExtend.setSequenceNum(maxSeq == null ? 1 : maxSeq + 1);
+
+                // 更新ancestorsPath
+                String ancestorsPath = "";
+                if (parentExtend != null)
+                {
+                    ancestorsPath = parentExtend.getAncestorsPath();
+                }
+                deptExtend.setAncestorsPath(ancestorsPath + "/" + newUnitCode);
+
+                deptExtendMapper.updateDeptExtend(deptExtend);
+
+                // 递归更新所有子部门的unit_code链
+                updateDescendantUnitCodes(dept.getDeptId(), newUnitCode, parentLevel + 1, deptExtend.getAncestorsPath());
+            }
+        }
+
         if (UserConstants.DEPT_NORMAL.equals(dept.getStatus()) && StringUtils.isNotEmpty(dept.getAncestors())
                 && !StringUtils.equals("0", dept.getAncestors()))
         {
@@ -246,6 +330,75 @@ public class SysDeptServiceImpl implements ISysDeptService
             updateParentDeptStatusNormal(dept);
         }
         return result;
+    }
+
+    /**
+     * 递归更新所有子部门的unit_code链
+     *
+     * @param parentId 父部门ID
+     * @param parentUnitCode 父单位编码
+     * @param parentLevel 父层级
+     * @param parentAncestorsPath 父ancestors路径
+     */
+    private void updateDescendantUnitCodes(Long parentId, String parentUnitCode, Integer parentLevel, String parentAncestorsPath)
+    {
+        List<SysDept> children = deptMapper.selectChildrenDeptById(parentId);
+        for (SysDept child : children)
+        {
+            if (child.getDeptId().equals(parentId))
+            {
+                continue;
+            }
+            SysDeptExtend childExtend = deptExtendMapper.selectDeptExtendByDeptId(child.getDeptId());
+            if (childExtend != null)
+            {
+                // 生成新的unit_code
+                String newUnitCode = generateUnitCode(parentId);
+                childExtend.setUnitCode(newUnitCode);
+                childExtend.setParentUnitCode(parentUnitCode);
+                childExtend.setDeptLevel(parentLevel + 1);
+                childExtend.setAncestorsPath(parentAncestorsPath + "/" + newUnitCode);
+
+                // 更新序号
+                Integer maxSeq = deptExtendMapper.selectMaxSequenceNumByParentId(parentId);
+                childExtend.setSequenceNum(maxSeq == null ? 1 : maxSeq + 1);
+
+                deptExtendMapper.updateDeptExtend(childExtend);
+
+                // 递归更新子部门
+                updateDescendantUnitCodes(child.getDeptId(), newUnitCode, parentLevel + 1, childExtend.getAncestorsPath());
+            }
+        }
+    }
+
+    /**
+     * 生成单位编码
+     * 格式: 父编码 + 3位序号
+     * 顶级部门(parentId=0)编码为"000"
+     *
+     * @param parentId 父部门ID
+     * @return 单位编码
+     */
+    private String generateUnitCode(Long parentId)
+    {
+        // 顶级部门
+        if (parentId == 0 || parentId == null)
+        {
+            return "000";
+        }
+
+        // 获取父部门的unit_code
+        SysDeptExtend parentExtend = deptExtendMapper.selectDeptExtendByDeptId(parentId);
+        if (parentExtend == null)
+        {
+            return "000";
+        }
+
+        String parentCode = parentExtend.getUnitCode();
+        Integer maxSeq = deptExtendMapper.selectMaxSequenceNumByParentId(parentId);
+        int nextSeq = (maxSeq == null ? 0 : maxSeq) + 1;
+
+        return parentCode + String.format("%03d", nextSeq);
     }
 
     /**

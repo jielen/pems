@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
@@ -53,7 +54,7 @@ public class SysDept extends BaseEntity
     private String parentName;
 
     /** 子部门 */
-    @com.baomidou.mybatisplus.annotation.TableField(exist = false)
+    @TableField(exist = false)
     private List<SysDept> children = new ArrayList<SysDept>();
 
     /** 单位编码（用于数据隔离，如000/000001/000001001） */

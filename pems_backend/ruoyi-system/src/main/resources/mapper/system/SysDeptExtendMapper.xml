@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SysDeptExtendMapper">
+
+    <resultMap type="com.ruoyi.system.domain.SysDeptExtend" id="SysDeptExtendResult">
+        <id property="deptId" column="dept_id"/>
+        <result property="unitCode" column="unit_code"/>
+        <result property="deptLevel" column="dept_level"/>
+        <result property="parentUnitCode" column="parent_unit_code"/>
+        <result property="sequenceNum" column="sequence_num"/>
+        <result property="ancestorsPath" column="ancestors_path"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectDeptExtendVo">
+        SELECT dept_id, unit_code, dept_level, parent_unit_code, sequence_num, ancestors_path, create_time, update_time
+        FROM sys_dept_extend
+    </sql>
+
+    <select id="selectDeptExtendByDeptId" parameterType="Long" resultMap="SysDeptExtendResult">
+        <include refid="selectDeptExtendVo"/>
+        WHERE dept_id = #{deptId}
+    </select>
+
+    <select id="selectMaxSequenceNumByParentId" parameterType="Long" resultType="Integer">
+        SELECT MAX(e.sequence_num)
+        FROM sys_dept d
+        LEFT JOIN sys_dept_extend e ON d.dept_id = e.dept_id
+        WHERE d.parent_id = #{parentId}
+    </select>
+
+    <select id="selectDeptExtendByParentUnitCode" resultMap="SysDeptExtendResult">
+        <include refid="selectDeptExtendVo"/>
+        WHERE parent_unit_code = #{parentUnitCode}
+    </select>
+
+    <insert id="insertDeptExtend" parameterType="com.ruoyi.system.domain.SysDeptExtend">
+        INSERT INTO sys_dept_extend
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="deptId != null">dept_id,</if>
+            <if test="unitCode != null">unit_code,</if>
+            <if test="deptLevel != null">dept_level,</if>
+            <if test="parentUnitCode != null">parent_unit_code,</if>
+            <if test="sequenceNum != null">sequence_num,</if>
+            <if test="ancestorsPath != null">ancestors_path,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="deptId != null">#{deptId},</if>
+            <if test="unitCode != null">#{unitCode},</if>
+            <if test="deptLevel != null">#{deptLevel},</if>
+            <if test="parentUnitCode != null">#{parentUnitCode},</if>
+            <if test="sequenceNum != null">#{sequenceNum},</if>
+            <if test="ancestorsPath != null">#{ancestorsPath},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateDeptExtend" parameterType="com.ruoyi.system.domain.SysDeptExtend">
+        UPDATE sys_dept_extend
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="unitCode != null">unit_code = #{unitCode},</if>
+            <if test="deptLevel != null">dept_level = #{deptLevel},</if>
+            <if test="parentUnitCode != null">parent_unit_code = #{parentUnitCode},</if>
+            <if test="sequenceNum != null">sequence_num = #{sequenceNum},</if>
+            <if test="ancestorsPath != null">ancestors_path = #{ancestorsPath},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        WHERE dept_id = #{deptId}
+    </update>
+
+    <delete id="deleteDeptExtendByDeptId" parameterType="Long">
+        DELETE FROM sys_dept_extend WHERE dept_id = #{deptId}
+    </delete>
+
+</mapper>

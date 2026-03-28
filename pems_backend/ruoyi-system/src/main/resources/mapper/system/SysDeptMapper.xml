@@ -20,11 +20,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="createTime" column="create_time" />
 		<result property="updateBy"   column="update_by"   />
 		<result property="updateTime" column="update_time" />
+		<result property="unitCode"   column="unit_code"   />
+		<result property="deptLevel"  column="dept_level"  />
 	</resultMap>
 	
 	<sql id="selectDeptVo">
-        select d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time 
+        select d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time,
+               e.unit_code, e.dept_level
         from sys_dept d
+        left join sys_dept_extend e on d.dept_id = e.dept_id
     </sql>
     
 	<select id="selectDeptList" parameterType="SysDept" resultMap="SysDeptResult">
@@ -60,8 +64,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     
     <select id="selectDeptById" parameterType="Long" resultMap="SysDeptResult">
 		select d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status,
-			(select dept_name from sys_dept where dept_id = d.parent_id) parent_name
+			(select dept_name from sys_dept where dept_id = d.parent_id) parent_name,
+			e.unit_code, e.dept_level
 		from sys_dept d
+		left join sys_dept_extend e on d.dept_id = e.dept_id
 		where d.dept_id = #{deptId}
 	</select>
     
