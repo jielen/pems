@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.9.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-28T12:29:36.947Z"
+last_updated: "2026-03-28T12:40:00Z"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
-  percent: 25
+  completed_plans: 2
+  percent: 50
 ---
 
 # Project State
@@ -24,13 +24,13 @@ progress:
 ## Current Position
 
 Phase: 01 (foundation-data-isolation) — EXECUTING
-Plan: 1 of 4
+Plan: 2 of 4 (01-03 just completed)
 
 - **Milestone:** v1
-- **Phase:** Planning (roadmap creation)
-- **Plan:** None (waiting for roadmap approval)
-- **Status:** Executing Phase 01
-- **Progress:** [████░░░░░░] 25% (Plan 01-01 complete)
+- **Phase:** Foundation & Data Isolation
+- **Plan:** 01-03 (PEMS Role and Permission System)
+- **Status:** Completed - awaiting 01-04
+- **Progress:** [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -50,6 +50,10 @@ Plan: 1 of 4
 | Extended SysDept for unit hierarchy | Minimizes framework changes, inherits RuoYi dept capabilities | Approved |
 | sys_dept_extend via FK to sys_dept | Data integrity via foreign key constraint | Approved |
 | PemsAuditLog builder + internal hash setters | Immutable design with HMAC-SHA256 chain support | Approved |
+| pems:* permission prefix | All PEMS modules use pems:module:operation format | Approved |
+| Predefined PEMS roles | super_admin, evidence_admin, investigator, auditor, reviewer | Approved |
+| Immediate permission cache refresh | Role permission changes evict Redis cache immediately | Approved |
+| Data scope per role | super_admin=1, evidence_admin/reviewer/auditor=4, investigator=5 | Approved |
 
 ### Research Flags
 
