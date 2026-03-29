@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,8 @@ import com.ruoyi.system.service.ISysUserService;
 @Service
 public class SysRoleServiceImpl implements ISysRoleService
 {
+    private static final Logger log = LoggerFactory.getLogger(SysRoleServiceImpl.class);
+
     @Autowired
     private SysRoleMapper roleMapper;
 
@@ -53,12 +57,6 @@ public class SysRoleServiceImpl implements ISysRoleService
 
     @Autowired
     private ISysUserService userService;
-
-    @Autowired
-    private com.ruoyi.framework.web.service.SysPermissionService permissionService;
-
-    @Autowired
-    private com.ruoyi.framework.web.service.TokenService tokenService;
 
     /**
      * 根据条件分页查询角色数据
@@ -458,7 +456,7 @@ public class SysRoleServiceImpl implements ISysRoleService
 
         // 遍历Redis中所有缓存的LoginUser，刷新拥有该角色的用户的权限
         // 注意：这是一个简化实现，在生产环境中可以考虑使用用户ID->token的反向索引
-        Set<String> keys = redisCache.keys(CacheConstants.LOGIN_TOKEN_KEY + "*");
+        Set<String> keys = new HashSet<>(redisCache.keys(CacheConstants.LOGIN_TOKEN_KEY + "*"));
         if (keys == null || keys.isEmpty())
         {
             return;
@@ -483,7 +481,7 @@ public class SysRoleServiceImpl implements ISysRoleService
                     if (user != null)
                     {
                         // 重新加载用户的菜单权限
-                        Set<String> freshPerms = permissionService.getMenuPermission(user);
+                        Set<String> freshPerms = this.selectRolePermissionByUserId(userId);
                         loginUser.setPermissions(freshPerms);
                         loginUser.setUser(user);
 
@@ -495,7 +493,7 @@ public class SysRoleServiceImpl implements ISysRoleService
             catch (Exception e)
             {
                 // 单个用户的缓存刷新失败不影响其他用户
-                com.ruoyi.common.utils.StringUtils.println("刷新用户权限缓存失败: {}", e.getMessage());
+                log.error("刷新用户权限缓存失败: {}", e.getMessage());
             }
         }
     }

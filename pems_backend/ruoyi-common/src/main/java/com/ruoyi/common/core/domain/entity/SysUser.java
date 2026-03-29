@@ -94,6 +94,9 @@ public class SysUser extends BaseEntity
     /** 角色ID */
     private Long roleId;
 
+    /** 警号 */
+    private String badge;
+
     public SysUser()
     {
 
@@ -308,6 +311,16 @@ public class SysUser extends BaseEntity
         this.roleId = roleId;
     }
 
+    public String getBadge()
+    {
+        return badge;
+    }
+
+    public void setBadge(String badge)
+    {
+        this.badge = badge;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -331,6 +344,7 @@ public class SysUser extends BaseEntity
             .append("updateTime", getUpdateTime())
             .append("remark", getRemark())
             .append("dept", getDept())
+            .append("badge", getBadge())
             .toString();
     }
 }
