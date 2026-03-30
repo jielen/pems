@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -179,7 +180,7 @@ public class PemsConfigController extends BaseController {
     @PreAuthorize("@ss.hasPermi('pems:config:list')")
     @GetMapping("/retention/period")
     public AjaxResult getRetentionPeriod() {
-        PemsConfig config = configService.selectConfigByKey("retention_period");
+        PemsConfig config = configService.selectConfigEntityByKey("retention_period");
         return success(config);
     }
 
@@ -204,7 +205,7 @@ public class PemsConfigController extends BaseController {
     @PreAuthorize("@ss.hasPermi('pems:config:list')")
     @GetMapping("/alert/rules")
     public AjaxResult getAlertRules() {
-        PemsConfig config = configService.selectConfigByKey("alert_rules");
+        PemsConfig config = configService.selectConfigEntityByKey("alert_rules");
         return success(config);
     }
 

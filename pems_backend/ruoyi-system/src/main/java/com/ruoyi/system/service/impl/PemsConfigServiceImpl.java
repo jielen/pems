@@ -51,6 +51,15 @@ public class PemsConfigServiceImpl implements IPemsConfigService {
     }
 
     /**
+     * 根据配置键查询配置实体
+     */
+    @Override
+    @Cacheable(value = CACHE_NAME, key = "#paramKey")
+    public PemsConfig selectConfigEntityByKey(String paramKey) {
+        return configMapper.selectConfigByKey(paramKey);
+    }
+
+    /**
      * 新增配置
      */
     @Override

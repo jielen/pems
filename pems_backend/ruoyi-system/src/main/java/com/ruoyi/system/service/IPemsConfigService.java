@@ -35,6 +35,14 @@ public interface IPemsConfigService {
     String selectConfigByKey(String paramKey);
 
     /**
+     * 根据配置键查询配置实体
+     *
+     * @param paramKey 配置键
+     * @return 配置实体
+     */
+    PemsConfig selectConfigEntityByKey(String paramKey);
+
+    /**
      * 新增配置
      *
      * @param config 配置信息
