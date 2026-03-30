@@ -54,7 +54,7 @@
 ### 后端（ruoyi模块结构）
 ```
 pems_backend/
-├── ruoyi-admin/           # 主启动类 + Controller
+├── ruoyi-admin/           # 主启动类（聚合所有模块，不放业务代码）
 ├── ruoyi-common/         # 公共模块（必须依赖）
 │   └── src/main/java/com/ruoyi/common/
 │       ├── annotation/    # @Log, @DataScope, @RateLimiter, @RepeatSubmit
@@ -62,16 +62,31 @@ pems_backend/
 │       ├── core/domain/   # BaseEntity, AjaxResult, TableDataInfo
 │       └── exception/
 ├── ruoyi-framework/       # 框架配置（安全、跨域、权限）
-├── ruoyi-system/         # 业务模块（Service + Mapper + Domain）
+├── ruoyi-system/         # 若依系统模块（用户、角色、菜单等，勿放PEMS业务）
 │   └── src/main/java/com/ruoyi/system/
 │       ├── service/       # ISysXxxService
 │       ├── service/impl/  # SysXxxServiceImpl
 │       ├── mapper/        # SysXxxMapper
 │       └── domain/        # 实体类、VO
+├── ruoyi-pems/           # ⭐ PEMS业务模块（所有物证管理业务代码放这里）
+│   └── src/main/java/com/ruoyi/pems/
+│       ├── controller/    # PEMS Controller
+│       ├── service/       # IPemsXxxService
+│       ├── service/impl/  # PemsXxxServiceImpl
+│       ├── mapper/        # PemsXxxMapper
+│       └── domain/        # 实体类
 ├── ruoyi-generator/      # 代码生成器
 ├── ruoyi-quartz/         # 定时任务
 └── sql/                  # 数据库脚本
 ```
+
+### ⚠️ 模块职责规则（必须遵守）
+
+- **ruoyi-system**：只放若依框架自带的系统功能（用户、角色、菜单、字典、部门等）
+- **ruoyi-pems**：所有 PEMS 物证管理业务代码（物证、借用、调拨、销毁等）**必须**放在此模块
+- **ruoyi-admin**：只作为启动入口，不放任何业务代码
+- **依赖链**：`ruoyi-common ← ruoyi-system ← ruoyi-framework ← ruoyi-pems ← ruoyi-admin`
+- **包名约定**：PEMS 业务代码统一使用 `com.ruoyi.pems.*` 包
 
 ### 前端（Vue3结构）
 ```
@@ -94,6 +109,34 @@ pems_frontend/
 **`docs/requirements/技术约束.md`**
 
 该文件为规范参考，执行计划时会自动加载。
+
+## 数据库脚本管理（Flyway）
+
+### 存放位置
+```
+ruoyi-admin/src/main/resources/db/migration/
+```
+
+### 命名规则
+```
+V{日期}_{序号}__{功能描述}.sql
+例：V20260329_01__ry_schema.sql
+    V20260329_02__foundation_schema.sql
+    V20260329_03__foundation_data.sql
+```
+
+### 执行顺序
+按文件名顺序执行，序号小的先执行。
+
+### 配置
+已配置在 `application-druid.yml` 中：
+```yaml
+spring:
+    flyway:
+        enabled: true
+        baseline-on-migrate: true
+        locations: classpath:db/migration
+```
 
 ## 开发注意事项
 

@@ -48,6 +48,12 @@
             <artifactId>ruoyi-quartz</artifactId>
         </dependency>
 
+        <!-- 物证管理模块-->
+        <dependency>
+            <groupId>com.ruoyi</groupId>
+            <artifactId>ruoyi-pems</artifactId>
+        </dependency>
+
         <!-- 代码生成-->
         <dependency>
             <groupId>com.ruoyi</groupId>

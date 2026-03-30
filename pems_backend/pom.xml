@@ -169,6 +169,13 @@
                 <version>${ruoyi.version}</version>
             </dependency>
 
+            <!-- 物证管理模块-->
+            <dependency>
+                <groupId>com.ruoyi</groupId>
+                <artifactId>ruoyi-pems</artifactId>
+                <version>${ruoyi.version}</version>
+            </dependency>
+
             <!-- 通用工具-->
             <dependency>
                 <groupId>com.ruoyi</groupId>
@@ -181,6 +188,7 @@
     <module>ruoyi-common</module>
     <module>ruoyi-framework</module>
     <module>ruoyi-system</module>
+    <module>ruoyi-pems</module>
     <module>ruoyi-quartz</module>
     <module>ruoyi-generator</module>
     <module>ruoyi-admin</module>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.pems.mapper.PemsConfigMapper">
+
+    <resultMap type="com.ruoyi.pems.domain.PemsConfig" id="PemsConfigResult">
+        <id     property="id"          column="id"          />
+        <result property="paramKey"     column="param_key"     />
+        <result property="paramValue"   column="param_value"   />
+        <result property="paramType"    column="param_type"    />
+        <result property="remark"       column="remark"        />
+        <result property="createBy"     column="create_by"     />
+        <result property="createTime"   column="create_time"   />
+        <result property="updateBy"     column="update_by"     />
+        <result property="updateTime"   column="update_time"   />
+    </resultMap>
+
+    <sql id="selectConfigVo">
+        select id, param_key, param_value, param_type, remark, create_by, create_time, update_by, update_time
+        from pems_config
+    </sql>
+
+    <sql id="sqlwhereSearch">
+        <where>
+            <if test="id != null">and id = #{id}</if>
+            <if test="paramKey != null and paramKey != ''">and param_key = #{paramKey}</if>
+            <if test="paramType != null and paramType != ''">and param_type = #{paramType}</if>
+            <if test="paramValue != null and paramValue != ''">and param_value like concat('%', #{paramValue}, '%')</if>
+        </where>
+    </sql>
+
+    <select id="selectConfigList" parameterType="com.ruoyi.pems.domain.PemsConfig" resultMap="PemsConfigResult">
+        <include refid="selectConfigVo"/>
+        <include refid="sqlwhereSearch"/>
+        order by id asc
+    </select>
+
+    <select id="selectConfigById" parameterType="Long" resultMap="PemsConfigResult">
+        <include refid="selectConfigVo"/> where id = #{id}
+    </select>
+
+    <select id="selectConfigByKey" parameterType="String" resultMap="PemsConfigResult">
+        <include refid="selectConfigVo"/> where param_key = #{paramKey}
+    </select>
+
+    <select id="checkConfigKeyUnique" parameterType="String" resultMap="PemsConfigResult">
+        <include refid="selectConfigVo"/> where param_key = #{paramKey}
+    </select>
+
+    <insert id="insertConfig" parameterType="com.ruoyi.pems.domain.PemsConfig">
+        insert into pems_config (
+            <if test="paramKey != null and paramKey != ''">param_key,</if>
+            <if test="paramValue != null and paramValue != ''">param_value,</if>
+            <if test="paramType != null and paramType != ''">param_type,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        ) values (
+            <if test="paramKey != null and paramKey != ''">#{paramKey},</if>
+            <if test="paramValue != null and paramValue != ''">#{paramValue},</if>
+            <if test="paramType != null and paramType != ''">#{paramType},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateConfig" parameterType="com.ruoyi.pems.domain.PemsConfig">
+        update pems_config
+        <set>
+            <if test="paramKey != null and paramKey != ''">param_key = #{paramKey},</if>
+            <if test="paramValue != null and paramValue != ''">param_value = #{paramValue},</if>
+            <if test="paramType != null and paramType != ''">param_type = #{paramType},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where id = #{id}
+    </update>
+
+</mapper>
